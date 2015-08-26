@@ -1,6 +1,12 @@
 #!/bin/bash
 # Check hardware status: how much power our BPi consumes, how busy our CPUs are
 
+# =========================================================[ Configuration ]===
+# min/max temperature doesn't seem to be of any use (phantasy values). Set to 1
+# to display them anyway
+TEMPMINMAX=0
+
+# ===============================================================[ Helpers ]===
 # Bash cannot use float, so we revert to awk. Adjust this for calculations
 # if you e.g. want to use "bc" instead.
 function calc() {
@@ -8,6 +14,7 @@ function calc() {
 }
 
 
+# ================================================================[ Do it! ]===
 # ----------------------------------------------------=[ Power consumption ]=--
 # microAmps:
 amps=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/ac/current_now)
@@ -24,4 +31,12 @@ freq1=$(cat /sys/devices/system/cpu/cpu1/cpufreq/cpuinfo_cur_freq)
 gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
 cputemp=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
 cputemp=$(calc "${cputemp}/1000")
-echo "CPUfreqs: ${freq0} / ${freq1}, governor: ${gov}, temperature: ${cputemp} °C"
+tmpdisp="CPUfreqs: ${freq0} / ${freq1}, governor: ${gov}, temperature: ${cputemp} °C"
+[[ $TEMPMINMAX -gt 0 ]] && {
+    cputempmin=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_min)
+    cputempmin=$(calc "${cputempmin}/1000")
+    cputempmax=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_max)
+    cputempmax=$(calc "${cputempmax}/1000")
+    tmpdisp="${tmpdisp} (min/max: ${cputempmin} / ${cputempmax} °C)"
+}
+echo "${tmpdisp}"
