@@ -28,10 +28,12 @@ echo "Currently running on $(calc "$volts/1000000") V with $(calc "$amps/1000") 
 # -------------------------------------------------------------=[ CPU data ]=--
 freq0=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq)
 freq1=$(cat /sys/devices/system/cpu/cpu1/cpufreq/cpuinfo_cur_freq)
+freqmin=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq)
+freqmax=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq)
 gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
 cputemp=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
 cputemp=$(calc "${cputemp}/1000")
-tmpdisp="CPUfreqs: ${freq0} / ${freq1}, governor: ${gov}, temperature: ${cputemp} °C"
+tmpdisp="CPUfreqs (MHz): $((${freq0}/1000)) / $((${freq1}/1000)), min/max: $((${freqmin}/1000)) / $((${freqmax}/1000)), governor: ${gov}, temperature: ${cputemp} °C"
 [[ $TEMPMINMAX -gt 0 ]] && {
     cputempmin=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_min)
     cputempmin=$(calc "${cputempmin}/1000")
