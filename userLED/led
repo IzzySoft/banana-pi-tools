@@ -1,0 +1,59 @@
+#!/bin/bash
+# Control the BananaPi's user LED
+# Basic idea taken from https://wolf-u.li/5181/led-des-bananapi-abschalten/
+# Written by Izzy (izzy AT qumran DOT org)
+
+# ===============================================================[ Helpers ]===
+# ---------------------------------------------------=[ Provide usage info ]=--
+function syntax() {
+    echo
+    echo "Usage:"
+    echo "  $0 <function>"
+    echo
+    echo "    <function> is one of:"
+    echo "    ${funcs[*]}"
+    echo
+    echo "  $0 status"
+    echo
+    echo "    obtain the current setting"
+    echo
+    echo "Examples:"
+    echo "  blink on cpu0 activity: $0 cpu0"
+    echo "  blink on SDcard writes: $0 mmc0"
+    echo "  steady timer (on-off) : $0 timer"
+    echo "  give heartbeat        : $0 heartbeat"
+    echo "  LED steady on         : $0 default-on"
+    echo "  LED off               : $0 none"
+    echo
+    exit
+}
+
+# ----------------------------=[ check whether $var is contained in $array ]=--
+# call: in_array $var ${array[*]}
+function in_array() {
+    if [[ "${2}" =~ "(^|[^\w\.])${1}($|[^\w\.])" ]]; then
+      return 1
+    fi
+    return 0
+}
+
+# ----------------------------------------------=[ Get available functions ]=--
+# ---------------------------------------------------=[ Provide usage info ]=--
+declare -a funcs=($(cat /sys/class/leds/green:ph24:led1/trigger | sed 's/\[//g;s/\]//g'))
+
+
+# ============================================================[ Do the job ]===
+# when called without arguments, provide usage info:
+[[ -z "$1" ]] && syntax
+
+# if the argument "status" is given, show how the LED is currently set
+[[ "$1" = "status" ]] && {
+    cat /sys/class/leds/green:ph24:led1/trigger | sed 's/.*\[\(.*\)\].*/\1/g'
+    exit
+}
+
+# check if we have a valid argument. Otherwise, provide usage info
+in_array "$1" "${funcs[*]}" || syntax
+
+# Still here? So we have to set a status:
+echo "$1" > /sys/class/leds/green:ph24:led1/trigger
