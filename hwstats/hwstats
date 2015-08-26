@@ -1,0 +1,27 @@
+#!/bin/bash
+# Check hardware status: how much power our BPi consumes, how busy our CPUs are
+
+# Bash cannot use float, so we revert to awk. Adjust this for calculations
+# if you e.g. want to use "bc" instead.
+function calc() {
+  echo $(awk "BEGIN {printf \"%.1f\",${1}}")
+}
+
+
+# ----------------------------------------------------=[ Power consumption ]=--
+# microAmps:
+amps=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/ac/current_now)
+# microVolts
+volts=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/ac/voltage_now)
+# watts
+watt=$(calc "${amps}*${volts}/1000000000000")
+echo "Currently running on $(calc "$volts/1000000") V with $(calc "$amps/1000") mA, eating ${watt} W"
+
+
+# -------------------------------------------------------------=[ CPU data ]=--
+freq0=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq)
+freq1=$(cat /sys/devices/system/cpu/cpu1/cpufreq/cpuinfo_cur_freq)
+gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+cputemp=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
+cputemp=$(calc "${cputemp}/1000")
+echo "CPUfreqs: ${freq0} / ${freq1}, governor: ${gov}, temperature: ${cputemp} °C"

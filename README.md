@@ -9,6 +9,7 @@ Just check the sub-directories, where each "helper" should be provided with its
 own `README` file. For now, we have:
 
 * **userLED:** allows you to easily control the BananaPi's user LED
+* **hwstats:** displays some basic hardware stats: power usage, CPU status
 
 
 ## License
