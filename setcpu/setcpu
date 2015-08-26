@@ -1,0 +1,169 @@
+#!/bin/bash
+# Adjust CPU settings of your BananaPi (or other Sunxi board)
+# Written by Izzy (izzy AT qumran DOT org)
+# Based on details from http://linux-sunxi.org/Cpufreq
+
+# =========================================================[ Configuration ]===
+
+# ===============================================================[ Helpers ]===
+# ------------------------------=[ available scaling frequencies (min/max) ]=--
+# Going beyond MAXFREQ might damage your board! Using low MINFREQ (though
+# supported) might make it laggy. Recommended MINFREQ: 408000. Recommended:
+# always stay between 144000 and 960000.
+#   "adjusting these values works in 48MHz steps … can use any value in between min/max but have to keep in mind that the values supplied will be rounded down"
+MAXFREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq)
+MINFREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq)
+CURMAXFREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq)
+CURMINFREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq)
+#AVAILFREQS=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies) # does not always exist
+# ------------------------------------------------------------=[ Governors ]=--
+# governors explained: https://www.kernel.org/doc/Documentation/cpu-freq/governors.txt
+GOVS=($(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors))
+CURGOV=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+
+# ---------------------------------------------------=[ Provide usage info ]=--
+function syntax() {
+    echo
+    echo "Usage:"
+    echo "  $0 <command> [<setting> <value>]"
+    echo
+    echo "Available commands:"
+    echo "  get                     : show current settings"
+    echo "  set <setting> <value>   : set <setting> to <value>"
+    echo
+    echo "Available settings:"
+    echo "  min[freq]   : minimal frequency. Must be between ${MINFREQ} and ${MAXFREQ}"
+    echo "  max[freq]   : maximal frequency. Must be between ${MINFREQ} and ${MAXFREQ}"
+    echo "  gov[ernor]  : the governor to use. Must be one of ${GOVS[*]}"
+    echo "  thresh[old] : the up_threshold (% CPU usage for upscale to kick in)"
+    echo "  sampl[ing]  : sampling_down_factor"
+    echo "  io[busy]    : io_is_busy (whether to keep CPU up on IO). Values: 0 or 1"
+    echo
+    exit 1
+}
+
+# ---------------------------------------------=[ check if $var is integer ]=--
+# call: isInt $var
+function isInt() {
+    if [[ ! -z "${1##*[!0-9]*}" ]]; then
+      return 0
+    else
+      return 1
+    fi
+}
+
+# ----------------------------=[ check whether $var is contained in $array ]=--
+# call: in_array $var "${array[*]}"
+function in_array() {
+    if [[ "${2}" =~ "(^|[^\w\.])${1}($|[^\w\.])" ]]; then
+      return 1
+    fi
+    return 0
+}
+
+# ================================================================[ Do it! ]===
+case "$1" in
+    get)
+            echo
+            echo "Current CPU settings:"
+            echo "  Possible frequencies (min/max): $((${MINFREQ}/1000)) Mhz / $((${MAXFREQ}/1000)) MHz"
+            echo "  Frequency (min/max)           : $((${CURMINFREQ}/1000)) Mhz / $((${CURMAXFREQ}/1000)) MHz"
+            echo "  Available governors           : ${GOVS[*]}"
+            echo "  Current governor              : ${CURGOV}"
+            echo
+            ;;
+    min|minfreq)
+            isInt "$2" || {
+                echo
+                echo "frequencies are numeric, please!"
+                echo
+                exit 1
+            }
+            [[ $2 -lt $MINFREQ || $2 -gt $MAXFREQ ]] && {
+                echo
+                echo "CPU frequency must be between ${MINFREQ} and ${MAXFREQ}"
+                echo
+                exit 1
+            }
+            echo -n $2 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+            ;;
+    max|maxfreq)
+            isInt "$2" || {
+                echo
+                echo "frequencies are numeric, please!"
+                echo
+                exit 1
+            }
+            [[ $2 -lt $MINFREQ || $2 -gt $MAXFREQ ]] && {
+                echo
+                echo "CPU frequency must be between ${MINFREQ} and ${MAXFREQ}"
+                echo
+                exit 1
+            }
+            echo -n $2 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+            ;;
+    gov|governor)
+            in_array $2 "${GOVS[*]}" || {
+                echo
+                echo "Governor must be one of the following: ${GOVS[*]}"
+                echo
+                exit 1
+            }
+            echo -n $2 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+            ;;
+    thresh|threshold)
+            [[ "${CURGOV}" != "ondemand" ]] && {
+                echo
+                echo "up_threshold only supported with ondemand governor."
+                echo
+                exit 1
+            }
+            isInt $2 || {
+                echo
+                echo "up_threshold must be an integer"
+                echo
+                exit 1
+            }
+            [[ $2 -lt 1 || $2 -gt 99 ]] && {
+                echo
+                echo "up_threshold must be between 1 and 99"
+                echo
+                exit 1
+            }
+            echo -n $2 > /sys/devices/system/cpu/cpufreq/ondemand/up_threshold
+            ;;
+    sampl|sampling)
+            [[ "${CURGOV}" != "ondemand" ]] && {
+                echo
+                echo "sampling_down_factor only supported with ondemand governor."
+                echo
+                exit 1
+            }
+            isInt $2 || {
+                echo
+                echo "sampling_down_factor must be an integer"
+                echo
+                exit 1
+            }
+            [[ $2 -lt 1 || $2 -gt 99 ]] && {
+                echo
+                echo "sampling_down_factor must be between 1 and 99"
+                echo
+                exit 1
+            }
+            echo -n $2 > /sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor
+            ;;
+    io|iobusy)
+            [[ "$2" != "0" && "$2" != "1" ]] && {
+                echo
+                echo "io_is_busy can only have a value of 0 or 1"
+                echo
+                exit 1
+            }
+            echo -n $2 > /sys/devices/system/cpu/cpufreq/ondemand/io_is_busy
+            exit 0
+            ;;
+    *)
+            syntax
+            ;;
+esac

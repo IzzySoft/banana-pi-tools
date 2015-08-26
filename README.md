@@ -8,8 +8,9 @@ contributions from "fellow bananas" – credits will be given, of course.
 Just check the sub-directories, where each "helper" should be provided with its
 own `README` file. For now, we have:
 
-* **userLED:** allows you to easily control the BananaPi's user LED
 * **hwstats:** displays some basic hardware stats: power usage, CPU status
+* **setcpu:** make it easier to get/set CPU performance values
+* **userLED:** allows you to easily control the BananaPi's user LED
 
 
 ## License
