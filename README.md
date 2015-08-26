@@ -26,3 +26,25 @@ Multiple choices here:
 * make yourself familiar with both. It's worth it :)
 * make yourself at least a Github account, then open a new "issue" and attach your contribution
 * send me your contribution by mail
+
+
+## Other interesting BananaPi projects on Github
+The following is far from being a complete list – it's just a collection of projects
+I thought might be useful even for non-programmers:
+
+* [zabbix-banana-pi](https://github.com/harryklein/zabbix-banana-pi): Monitor your BPi using
+  [Zabbix](http://www.zabbix.com/): CPU speed/temperature, voltage of power supply
+* [axp209_bananaPI](https://github.com/zoon81/axp209_bananaPI): shell script to
+  read some information about power usage on bananaPI. Requires `i2cset` (`apt-get install i2c-tools`),
+  see [Hardware-Libre](http://hardware-libre.fr/2014/11/banana-pi-axp209-battery-power-monitoring/)
+* [learning-banana-pi](https://github.com/CMDann/learning-banana-pi): Code
+  examples from the book. For non-programmers: includes a shell script to control GPIOs
+* [Schnelleinstieg_Banana_Pi](https://github.com/mschlenker/Schnelleinstieg_Banana_Pi): similar
+  stuff for Germans: code snippets, additional details, sketched circuit diagrams, etc.
+* [bananapi-memo](https://github.com/annbigbig/bananapi-memo): collection of howtos and infos
+* [XBananaMC](https://github.com/XBananaMC/XBananaMC): get XBMC (now: Kodi) running on your BPi
+* [RaspMonitor](https://github.com/DreamedAtlas/RaspMonitor): A web monitor for
+  the Raspberry Pi and other similar platform like Cubie Board or Banana Pi (lacks docu)
+* [banana-panel](https://github.com/harmon25/banana-panel): Fork of Raspcontrol for the Banana Pi
+* [micropc](https://github.com/marines/micropc): another script collection for Pis.
+  Currently holding temperature monitoring using RRD.
