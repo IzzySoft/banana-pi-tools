@@ -1,5 +1,6 @@
 #!/bin/bash
 # Check hardware status: how much power our BPi consumes, how busy our CPUs are
+# Written by Izzy (izzy AT qumran DOT org)
 
 # =========================================================[ Configuration ]===
 # min/max temperature doesn't seem to be of any use (phantasy values). Set to 1
@@ -7,22 +8,43 @@
 TEMPMINMAX=0
 
 # ===============================================================[ Helpers ]===
+# ----------------------------------------------------=[ Float calculation ]=--
 # Bash cannot use float, so we revert to awk. Adjust this for calculations
 # if you e.g. want to use "bc" instead.
 function calc() {
   echo $(awk "BEGIN {printf \"%.1f\",${1}}")
 }
 
+# ---------------------------------------------------=[ Provide usage info ]=--
+function syntax() {
+    echo
+    echo "Usage:"
+    echo "  $0 <detail>"
+    echo
+    echo "Available details:"
+    echo "  all|a|full          : all details in human-readable format"
+    echo "  cpu0freq|cpu1freq   : current frequency of CPU0/CPU1, human-readable"
+    echo "  cpu0freqraw         : dito, raw values (Hz)"
+    echo "  eff|efficiency|watt : power usage in human-readable format"
+    echo "  effraw|efficiencyraw|wattraw|mwatt : same as raw value (int) in mW"
+    echo "  tmp|temp            : temperature in human-readable format"
+    echo "  tmpraw|tempraw      : temperature (raw value, i.e. 1/1000 °C)"
+    echo
+    exit 1
+}
 
-# ================================================================[ Do it! ]===
+
+
+# ===========================================================[ Calculation ]===
 # ----------------------------------------------------=[ Power consumption ]=--
 # microAmps:
 amps=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/ac/current_now)
 # microVolts
 volts=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/ac/voltage_now)
 # watts
+mwatt=$((${amps}*${volts}/1000000000))
 watt=$(calc "${amps}*${volts}/1000000000000")
-echo "Currently running on $(calc "$volts/1000000") V with $(calc "$amps/1000") mA, eating ${watt} W"
+pwrdisp="Currently running on $(calc "$volts/1000000") V with $(calc "$amps/1000") mA, eating ${watt} W"
 
 
 # -------------------------------------------------------------=[ CPU data ]=--
@@ -31,9 +53,9 @@ freq1=$(cat /sys/devices/system/cpu/cpu1/cpufreq/cpuinfo_cur_freq)
 freqmin=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq)
 freqmax=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq)
 gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
-cputemp=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
-cputemp=$(calc "${cputemp}/1000")
-tmpdisp="CPUfreqs (MHz): $((${freq0}/1000)) / $((${freq1}/1000)), min/max: $((${freqmin}/1000)) / $((${freqmax}/1000)), governor: ${gov}, temperature: ${cputemp} °C"
+cputempraw=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
+cputemp=$(calc "${cputempraw}/1000")
+tmpdisp="CPUfreqs (MHz): $((${freq0}/1000))/$((${freq1}/1000)), min/max: $((${freqmin}/1000))/$((${freqmax}/1000)), governor: ${gov}, temperature: ${cputemp} °C"
 [[ $TEMPMINMAX -gt 0 ]] && {
     cputempmin=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_min)
     cputempmin=$(calc "${cputempmin}/1000")
@@ -41,4 +63,42 @@ tmpdisp="CPUfreqs (MHz): $((${freq0}/1000)) / $((${freq1}/1000)), min/max: $((${
     cputempmax=$(calc "${cputempmax}/1000")
     tmpdisp="${tmpdisp} (min/max: ${cputempmin} / ${cputempmax} °C)"
 }
-echo "${tmpdisp}"
+
+
+# ================================================================[ Output ]===
+case "$1" in
+    all|a|full)
+        echo
+        echo "${pwrdisp}"
+        echo "${tmpdisp}"
+        echo
+        ;;
+    cpu0freq)
+        echo "$((${freq0}/1000)) MHz"
+        ;;
+    cpu0freqraw)
+        echo "${freq0}"
+        ;;
+    cpu1freq)
+        echo "$((${freq1}/1000)) MHz"
+        ;;
+    cpu1freqraw)
+        echo "${freq1}"
+        ;;
+    eff|efficiency|watt)
+        echo "${watt} W"
+        ;;
+    effraw|efficiencyraw|wattraw|mwatt)
+        echo "${mwatt}"
+        ;;
+    tmp|temp)
+        echo "$cputemp °C"
+        ;;
+    tmpraw|tempraw)
+        echo "${cputempraw}"
+        ;;
+    *)
+        syntax
+        ;;
+esac
+
