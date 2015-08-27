@@ -1,0 +1,67 @@
+#!/bin/bash
+# Temperature guardian
+# Use the userLED to indicate heat issues
+# This script requires the `led` and `hwstats` scripts to be available in your PATH
+# Written by Izzy (izzy AT qumran DOT org)
+
+# =========================================================[ Configuration ]===
+# values for warning (LED blink) and alert (LED heartbeat flash) thresholds.
+# specify in milligrad – i.e. 50 °C must be specified as 50000
+WARN=50000
+ALERT=60000
+# interval between checks in seconds
+INTERVAL=60
+
+
+# ===============================================================[ Helpers ]===
+# ---------------------------------------------=[ check if $var is integer ]=--
+# call: isInt $var
+function isInt() {
+    if [[ ! -z "${1##*[!0-9]*}" ]]; then
+      return 0
+    else
+      return 1
+    fi
+}
+
+# =========================================================[ Check & Alert ]===
+# -----------------------------------------------=[ verify configured vars ]=--
+isInt "${WARN}" || {
+    >&2 echo "WARN level must be an integer!"
+    exit 1
+}
+isInt "${ALERT}" || {
+    >&2 echo "ALERT level must be an integer!"
+    exit 1
+}
+isInt "${INTERVAL}" || {
+    >&2 echo "INTERVAL level must be an integer!"
+    exit 1
+}
+[[ $WARN -ge $ALERT ]] && {
+    >&2 echo "ALERT level must be higher than WARN level!"
+    exit 1
+}
+[[ $WARN -lt 30000 || $ALERT -lt 40000 ]] && {
+    >&2 echo "Are you kidding? Really warn at $((${WARN}/1000))°C and alert at $((${ALERT}/1000))°C?"
+    >&2 echo "If you just want to check your LED, you don't need to run a daemon :)"
+    >&2 echo "But you're the boss – so here we go. Happy XMas tree!"
+}
+[[ $INTERVAL -lt 10 ]] && {
+    >&2 echo "Don't overdo it – not that the guardian itself causes the heat."
+    >&2 echo "Give it a minimum of 10s, will you?"
+    exit 1
+}
+
+# ---------------------------------------------------------=[ do the loop! ]=--
+while true; do
+    temp=$(hwstats tempraw)             # get the raw temperature via hwstats
+    if [[ $temp -gt ${ALERT} ]]; then   # > 60°C, have LED flicker hectically
+        led heartbeat
+    elif [[ $temp -gt ${WARN} ]]; then  # 50°C < temp < 60°C, have LED blink
+        led blink
+    else                                # temp ≤ 50°C, shut off LED
+        led none
+    fi
+    sleep ${INTERVAL}
+done

@@ -10,6 +10,7 @@ own `README` file. For now, we have:
 
 * **hwstats:** displays some basic hardware stats: power usage, CPU status
 * **setcpu:** make it easier to get/set CPU performance values
+* **tempguard:** utilizing the BananaPi's user-LED to signal heat problems
 * **userLED:** allows you to easily control the BananaPi's user LED
 
 
