@@ -29,6 +29,8 @@ function syntax() {
     echo "  effraw|efficiencyraw|wattraw|mwatt : same as raw value (int) in mW"
     echo "  tmp|temp            : temperature in human-readable format"
     echo "  tmpraw|tempraw      : temperature (raw value, i.e. 1/1000 °C)"
+    echo "  netspeed            : network speed in MBit"
+    echo "  netstate            : whether the network is 'up' or 'down'"
     echo
     exit 1
 }
@@ -37,65 +39,99 @@ function syntax() {
 
 # ===========================================================[ Calculation ]===
 # ----------------------------------------------------=[ Power consumption ]=--
-# microAmps:
-amps=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/ac/current_now)
-# microVolts
-volts=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/ac/voltage_now)
-# watts
-mwatt=$((${amps}*${volts}/1000000000))
-watt=$(calc "${amps}*${volts}/1000000000000")
-pwrdisp="Currently running on $(calc "$volts/1000000") V with $(calc "$amps/1000") mA, eating ${watt} W"
+function power() {
+    # microAmps:
+    amps=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/ac/current_now)
+    # microVolts
+    volts=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/axp20-supplyer.28/power_supply/ac/voltage_now)
+    # watts
+    mwatt=$((${amps}*${volts}/1000000000))
+    watt=$(calc "${amps}*${volts}/1000000000000")
+    pwrdisp="Currently running on $(calc "$volts/1000000") V with $(calc "$amps/1000") mA, eating ${watt} W"
+}
 
 
 # -------------------------------------------------------------=[ CPU data ]=--
-freq0=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq)
-freq1=$(cat /sys/devices/system/cpu/cpu1/cpufreq/cpuinfo_cur_freq)
-freqmin=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq)
-freqmax=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq)
-gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
-cputempraw=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
-cputemp=$(calc "${cputempraw}/1000")
-tmpdisp="CPUfreqs (MHz): $((${freq0}/1000))/$((${freq1}/1000)), min/max: $((${freqmin}/1000))/$((${freqmax}/1000)), governor: ${gov}, temperature: ${cputemp} °C"
-[[ $TEMPMINMAX -gt 0 ]] && {
-    cputempmin=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_min)
-    cputempmin=$(calc "${cputempmin}/1000")
-    cputempmax=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_max)
-    cputempmax=$(calc "${cputempmax}/1000")
-    tmpdisp="${tmpdisp} (min/max: ${cputempmin} / ${cputempmax} °C)"
+function cpu() {
+    freq0=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq)
+    freq1=$(cat /sys/devices/system/cpu/cpu1/cpufreq/cpuinfo_cur_freq)
+    freqmin=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq)
+    freqmax=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq)
+    gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)
+    cputempraw=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_input)
+    cputemp=$(calc "${cputempraw}/1000")
+    tmpdisp="CPUfreqs (MHz): $((${freq0}/1000))/$((${freq1}/1000)), min/max: $((${freqmin}/1000))/$((${freqmax}/1000)), governor: ${gov}, temperature: ${cputemp} °C"
+    [[ $TEMPMINMAX -gt 0 ]] && {
+        cputempmin=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_min)
+        cputempmin=$(calc "${cputempmin}/1000")
+        cputempmax=$(cat /sys/devices/platform/sunxi-i2c.0/i2c-0/0-0034/temp1_max)
+        cputempmax=$(calc "${cputempmax}/1000")
+        tmpdisp="${tmpdisp} (min/max: ${cputempmin} / ${cputempmax} °C)"
+    }
+}
+
+# ---------------------------------------------------------=[ network data ]=--
+function network() {
+    netspeed=$(cat /sys/devices/platform/sunxi_gmac/net/eth0/speed)
+    netduplex=$(cat /sys/devices/platform/sunxi_gmac/net/eth0/duplex)
+    netmtu=$(cat /sys/devices/platform/sunxi_gmac/net/eth0/mtu)
+    netstate=$(cat /sys/devices/platform/sunxi_gmac/net/eth0/operstate)
+    netif=$(cat /sys/devices/platform/sunxi_gmac/net/eth0/uevent | grep INTERFACE | awk -F= '{print $NF}')
+    netdisp="Network: ${netif} ${netstate}, duplex: ${netduplex}, MTU: ${netmtu}, speed: ${netspeed} MBit"
 }
 
 
 # ================================================================[ Output ]===
 case "$1" in
     all|a|full)
+        cpu
+        power
+        network
         echo
         echo "${pwrdisp}"
         echo "${tmpdisp}"
+        echo "${netdisp}"
         echo
         ;;
     cpu0freq)
+        cpu
         echo "$((${freq0}/1000)) MHz"
         ;;
     cpu0freqraw)
+        cpu
         echo "${freq0}"
         ;;
     cpu1freq)
+        cpu
         echo "$((${freq1}/1000)) MHz"
         ;;
     cpu1freqraw)
+        cpu
         echo "${freq1}"
         ;;
     eff|efficiency|watt)
+        power
         echo "${watt} W"
         ;;
     effraw|efficiencyraw|wattraw|mwatt)
+        power
         echo "${mwatt}"
         ;;
     tmp|temp)
+        cpu
         echo "$cputemp °C"
         ;;
     tmpraw|tempraw)
+        cpu
         echo "${cputempraw}"
+        ;;
+    netspeed)
+        network
+        echo "${netspeed}"
+        ;;
+    netstate)
+        network
+        echo "${netstate}"
         ;;
     *)
         syntax
