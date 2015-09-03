@@ -8,7 +8,7 @@ contributions from "fellow bananas" – credits will be given, of course.
 Just check the sub-directories, where each "helper" should be provided with its
 own `README` file. For now, we have:
 
-* **hwstats:** displays some basic hardware stats: power usage, CPU status
+* **hwstats:** displays some basic hardware stats: power usage, CPU & network status
 * **setcpu:** make it easier to get/set CPU performance values
 * **tempguard:** utilizing the BananaPi's user-LED to signal heat problems
 * **userLED:** allows you to easily control the BananaPi's user LED
@@ -51,10 +51,14 @@ I thought might be useful even for non-programmers:
 * [micropc](https://github.com/marines/micropc): another script collection for Pis.
   Currently holding temperature monitoring using RRD.
 
+### Tools
+* [pdf2json](https://github.com/tomasgal/pdf2json): PDF converter compiled for Bananian
+* [bananian-rootfsmover](https://github.com/hirnwunde/bananian-rootfsmover): move rootFS to SATA/USB-disk
+* [XBananaMC](https://github.com/XBananaMC/XBananaMC): get XBMC (now: Kodi) running on your BPi
+
 ### Misc collections
 * [learning-banana-pi](https://github.com/CMDann/learning-banana-pi): Code
   examples from the book. For non-programmers: includes a shell script to control GPIOs
 * [Schnelleinstieg_Banana_Pi](https://github.com/mschlenker/Schnelleinstieg_Banana_Pi): similar
   stuff for Germans: code snippets, additional details, sketched circuit diagrams, etc.
 * [bananapi-memo](https://github.com/annbigbig/bananapi-memo): collection of howtos and infos
-* [XBananaMC](https://github.com/XBananaMC/XBananaMC): get XBMC (now: Kodi) running on your BPi

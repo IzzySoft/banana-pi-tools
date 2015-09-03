@@ -1,5 +1,6 @@
 ## What is this?
-This script display some basic hardware stats: power usage, CPU status.
+This script display some basic hardware stats: power usage, CPU status,
+network status.
 
 
 ## Installation
@@ -48,8 +49,10 @@ Output of `hwstats all` with `TEMPMINMAX=0`:
 
     Currently running on 5.2 V with 456.0 mA, eating 2.4 W
     CPUfreqs (MHz): 720/912, min/max: 400/912, governor: ondemand, temperature: 50.6 °C
+    Network: eth0 up, duplex: full, MTU: 1500, speed: 1000 MBit
 
 Output with `TEMPMINMAX=1`:
 
     Currently running on 5.1 V with 725.0 mA, eating 3.7 W
     CPUfreqs: 720/720, min/max: 400/912, governor: ondemand, temperature: 50.6 °C (min/max: -144.7 / 264.8 °C)
+    Network: eth0 up, duplex: full, MTU: 1500, speed: 1000 MBit
