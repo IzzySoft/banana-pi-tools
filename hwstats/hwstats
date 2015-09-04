@@ -6,6 +6,8 @@
 # min/max temperature doesn't seem to be of any use (phantasy values). Set to 1
 # to display them anyway
 TEMPMINMAX=0
+# which disk to check. Set to mmcblk0 for SD card, sda for external disk
+DISK=sda
 
 # ===============================================================[ Helpers ]===
 # ----------------------------------------------------=[ Float calculation ]=--
@@ -26,6 +28,9 @@ function syntax() {
     echo "  cpu0freq|cpu1freq   : current frequency of CPU0/CPU1, human-readable"
     echo "  cpu0freqraw         : dito, raw values (Hz)"
     echo "  cpubusy             : percentage CPU was busy since boot"
+    echo "  diskinio|diskiniopct: how long (ms/%) the disk was busy since boot"
+    echo "  diskreads|diskwrites: how many reads/writes were performed since boot"
+    echo "  diskreadtime|diskwritetime: ms spent in read/write since boot"
     echo "  eff|efficiency|watt : power usage in human-readable format"
     echo "  effraw|efficiencyraw|wattraw|mwatt : same as raw value (int) in mW"
     echo "  tmp|temp            : temperature in human-readable format"
@@ -84,16 +89,35 @@ function network() {
 }
 
 
+# ------------------------------------------------------------=[ disk data ]=--
+function disks() {
+  if [[ -e /sys/block/${DISK}/stat ]]; then
+    uptimes=$(cat /proc/uptime | awk '{print $1}')
+    diskinio=$(cat /sys/block/${DISK}/stat | awk '{print $NF}')
+    diskiopct=$(awk "BEGIN {printf \"%.2f\",${diskinio} / ${uptimes} / 1000}")
+    diskreads=$(cat /sys/block/${DISK}/stat | awk '{print $1}')
+    diskreadtime=$(cat /sys/block/${DISK}/stat | awk '{print $4}')
+    diskwrites=$(cat /sys/block/${DISK}/stat | awk '{print $5}')
+    diskwritetime=$(cat /sys/block/${DISK}/stat | awk '{print $8}')
+    diskdisp="Disk /dev/${DISK} since boot: busy for ${diskinio}ms (${diskiopct}%), ${diskreads} reads (${diskreadtime}ms), ${diskwrites} writes (${diskwritetime}ms)"
+  else
+    diskdisp=
+  fi
+}
+
+
 # ================================================================[ Output ]===
 case "$1" in
     all|a|full)
         cpu
         power
         network
+        disks
         echo
         echo "${pwrdisp}"
         echo "${tmpdisp}"
         echo "${netdisp}"
+        echo "${diskdisp}"
         echo
         ;;
     cpu0freq)
@@ -115,6 +139,30 @@ case "$1" in
     cpubusy)
         cpu
         echo "${cpubusy}"
+        ;;
+    diskinio)
+        disks
+        echo "${diskinio}"
+        ;;
+    diskiopct)
+        disks
+        echo "${diskiopct}"
+        ;;
+    diskreads)
+        disks
+        echo "${diskreads}"
+        ;;
+    diskreadtime)
+        disks
+        echo "${diskreadtime}"
+        ;;
+    diskwrites)
+        disks
+        echo "${diskwrites}"
+        ;;
+    diskwritetime)
+        disks
+        echo "${diskwritetime}"
         ;;
     eff|efficiency|watt)
         power

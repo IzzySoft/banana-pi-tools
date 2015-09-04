@@ -17,6 +17,10 @@ the sensor covers, and not – as one might have expected – historical low/hig
 whether to include them setting `TEMPMINMAX` to the appropriate value. Default
 is `TEMPMINMAX=0`, i.e. not to calculate/display those.
 
+If you have a disk attached (SATA or USB), this usually becomes `/dev/sda`.
+Please verify, and if the disk appears under a different name (or you want
+to check your SD card instead), adjust the `DISK` variable accordingly.
+
 Furthermore, Bash cannot do float calculations, so the script uses `awk` for
 that (as `awk` was already installed, and `bc` was not). If you want to do
 calculation by other means, simply adjust the `calc()` function at the
@@ -50,9 +54,11 @@ Output of `hwstats all` with `TEMPMINMAX=0`:
     Currently running on 5.2 V with 456.0 mA, eating 2.4 W
     CPUfreqs (MHz): 720/912, min/max: 400/912, governor: ondemand, temperature: 50.6 °C
     Network: eth0 up, duplex: full, MTU: 1500, speed: 1000 MBit
+    Disk /dev/sda since boot: busy for 3095900ms (0.01%), 6678 reads (13620ms), 44490 writes (3082570ms)
 
 Output with `TEMPMINMAX=1`:
 
     Currently running on 5.1 V with 725.0 mA, eating 3.7 W
     CPUfreqs: 720/720, min/max: 400/912, governor: ondemand, temperature: 50.6 °C (min/max: -144.7 / 264.8 °C)
     Network: eth0 up, duplex: full, MTU: 1500, speed: 1000 MBit
+    Disk /dev/sda since boot: busy for 3095900ms (0.01%), 6678 reads (13620ms), 44490 writes (3082570ms)
